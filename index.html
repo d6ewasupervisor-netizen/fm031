@@ -694,7 +694,10 @@ async function openViewer(pdf, desc, dbkey) {
     const pdfjsLib = await _getPdfjs();
     if (_pdfAbort) return;
     const loadingTask = pdfjsLib.getDocument(_pdfPath);
-    const pdfDoc = await loadingTask.promise;
+    const pdfDoc = await Promise.race([
+      loadingTask.promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
+    ]);
     if (_pdfAbort) return;
 
     _pdfDoc = pdfDoc;
@@ -735,6 +738,10 @@ async function openViewer(pdf, desc, dbkey) {
       _pdfObserver.observe(slot);
     });
 
+    // Force-render page 1 immediately (don't rely solely on IntersectionObserver)
+    _renderPage(1);
+    if (_pdfTotalPages > 1) _renderPage(2);
+
     // Page indicator via scroll
     indicator.style.display = 'block';
     indicator.textContent = 'Page 1 of ' + _pdfTotalPages;
@@ -770,10 +777,12 @@ async function openViewer(pdf, desc, dbkey) {
 
   } catch (err) {
     if (_pdfAbort) return;
+    const isTimeout = err && err.message === 'timeout';
     body.innerHTML = `
       <div class="viewer-fallback">
-        <p>PDF could not be loaded.</p>
+        <p>${isTimeout ? 'PDF took too long to load.' : 'PDF could not be loaded.'}</p>
         <a href="${_pdfPath}" target="_blank" rel="noopener">Open PDF in New Tab</a>
+        <br><button onclick="openViewer('${escAttr(pdf)}','${escAttr(desc)}','${escAttr(dbkey)}')" style="margin-top:12px;padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;">Retry</button>
       </div>
     `;
   }
@@ -842,7 +851,10 @@ async function _renderPage(pageNum) {
     slot.classList.add('rendered');
     _pdfPages[pageNum] = canvas;
   } catch (err) {
-    // Silently fail for individual pages
+    const slot = document.getElementById('pdfPage' + pageNum);
+    if (slot && !slot.classList.contains('rendered')) {
+      slot.innerHTML = '<div style="color:#f87171;font-size:12px;padding:16px;text-align:center;">Page failed to load</div>';
+    }
   } finally {
     _pdfRendering[pageNum] = false;
   }
