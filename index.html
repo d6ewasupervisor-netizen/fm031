@@ -228,7 +228,7 @@
   }
   .pog-card-missing {
     opacity: 0.5;
-    cursor: default;
+    cursor: pointer;
   }
   .pog-card-missing::after {
     content: 'PDF not in package';
@@ -236,6 +236,29 @@
     font-size: 11px;
     color: var(--danger);
     margin-top: 4px;
+  }
+  .missing-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--danger);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    text-align: center;
+    max-width: 90vw;
+  }
+  .missing-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 
   /* ── PDF Viewer Modal ── */
@@ -509,7 +532,8 @@ function showDetail(name) {
     const ornLabel = pos.orn === 'L' ? 'LEFT' : pos.orn === 'R' ? 'RIGHT' : 'ENTRANCE';
     const thumb = THUMBS[pos.dbkey] || '';
     const missing = !pos.has_pdf ? 'pog-card-missing' : '';
-    const onclick = pos.has_pdf ? `onclick="openViewer('${escAttr(pos.pdf)}','${escAttr(pos.desc)}','${escAttr(pos.dbkey)}')"` : '';
+    const onclick = pos.has_pdf ? `onclick="openViewer('${escAttr(pos.pdf)}','${escAttr(pos.desc)}','${escAttr(pos.dbkey)}')"` : `onclick="showMissingPdfMessage('${escAttr(pos.dbkey)}')"`;
+
     pogCards += `<div class="pog-card orn-${pos.orn} ${missing}" ${onclick}>
       ${thumb ? `<img class="pog-card-thumb" src="${thumb}" alt="thumbnail">` : `<div class="pog-card-thumb"></div>`}
       <div class="pog-card-info">
@@ -546,7 +570,8 @@ function buildUscanSVG(lane, hasL, hasR, hasE) {
     const ePos = lane.positions.filter(p => p.orn === 'E');
     for (let i = 0; i < ePos.length; i++) {
       const yOff = i * 38;
-      const clickFn = ePos[i].has_pdf ? `onclick="openViewer('${escAttr(ePos[i].pdf)}','${escAttr(ePos[i].desc)}','${escAttr(ePos[i].dbkey)}')"` : '';
+      const clickFn = ePos[i].has_pdf ? `onclick="openViewer('${escAttr(ePos[i].pdf)}','${escAttr(ePos[i].desc)}','${escAttr(ePos[i].dbkey)}')"` : `onclick="showMissingPdfMessage('${escAttr(ePos[i].dbkey)}')"`;
+
       svg += `<g class="zone" ${clickFn}>
         <rect x="30" y="${10+yOff}" width="240" height="32" rx="6" fill="#fbbf2420" stroke="#fbbf24" stroke-width="1.5"/>
         <text x="150" y="${30+yOff}" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600" font-family="DM Sans,sans-serif">E: ${ePos[i].desc.substring(0,35)}</text>
@@ -571,7 +596,7 @@ function buildUscanSVG(lane, hasL, hasR, hasE) {
   // Left shelf
   if (hasL) {
     const lp = lane.positions.find(p => p.orn === 'L');
-    const clickFn = lp.has_pdf ? `onclick="openViewer('${escAttr(lp.pdf)}','${escAttr(lp.desc)}','${escAttr(lp.dbkey)}')"` : '';
+    const clickFn = lp.has_pdf ? `onclick="openViewer('${escAttr(lp.pdf)}','${escAttr(lp.desc)}','${escAttr(lp.dbkey)}')"` : `onclick="showMissingPdfMessage('${escAttr(lp.dbkey)}')"`;
     svg += `<g class="zone" ${clickFn}>
       <rect x="8" y="${topOffset+10}" width="70" height="140" rx="6" fill="#34d39910" stroke="#34d399" stroke-width="2" stroke-dasharray="6 3"/>
       <text x="43" y="${topOffset+75}" text-anchor="middle" fill="#34d399" font-size="13" font-weight="700" font-family="DM Sans,sans-serif">LEFT</text>
@@ -582,7 +607,7 @@ function buildUscanSVG(lane, hasL, hasR, hasE) {
   // Right shelf
   if (hasR) {
     const rp = lane.positions.find(p => p.orn === 'R');
-    const clickFn = rp.has_pdf ? `onclick="openViewer('${escAttr(rp.pdf)}','${escAttr(rp.desc)}','${escAttr(rp.dbkey)}')"` : '';
+    const clickFn = rp.has_pdf ? `onclick="openViewer('${escAttr(rp.pdf)}','${escAttr(rp.desc)}','${escAttr(rp.dbkey)}')"` : `onclick="showMissingPdfMessage('${escAttr(rp.dbkey)}')"`;
     svg += `<g class="zone" ${clickFn}>
       <rect x="222" y="${topOffset+10}" width="70" height="140" rx="6" fill="#f472b610" stroke="#f472b6" stroke-width="2" stroke-dasharray="6 3"/>
       <text x="257" y="${topOffset+75}" text-anchor="middle" fill="#f472b6" font-size="13" font-weight="700" font-family="DM Sans,sans-serif">RIGHT</text>
@@ -614,7 +639,7 @@ function buildLibertySVG(lane, hasR, hasE) {
   // Tail shelving (right side, running full length)
   if (hasR) {
     const rp = lane.positions.find(p => p.orn === 'R');
-    const clickFn = rp.has_pdf ? `onclick="openViewer('${escAttr(rp.pdf)}','${escAttr(rp.desc)}','${escAttr(rp.dbkey)}')"` : '';
+    const clickFn = rp.has_pdf ? `onclick="openViewer('${escAttr(rp.pdf)}','${escAttr(rp.desc)}','${escAttr(rp.dbkey)}')"` : `onclick="showMissingPdfMessage('${escAttr(rp.dbkey)}')"`;
     svg += `<g class="zone" ${clickFn}>
       <rect x="170" y="44" width="90" height="180" rx="6" fill="#f472b610" stroke="#f472b6" stroke-width="2" stroke-dasharray="6 3"/>
       <text x="215" y="128" text-anchor="middle" fill="#f472b6" font-size="13" font-weight="700" font-family="DM Sans,sans-serif">RIGHT</text>
@@ -630,7 +655,7 @@ function buildLibertySVG(lane, hasR, hasE) {
   // Endcap at bottom (entrance)
   if (hasE) {
     const ep = lane.positions.find(p => p.orn === 'E');
-    const clickFn = ep.has_pdf ? `onclick="openViewer('${escAttr(ep.pdf)}','${escAttr(ep.desc)}','${escAttr(ep.dbkey)}')"` : '';
+    const clickFn = ep.has_pdf ? `onclick="openViewer('${escAttr(ep.pdf)}','${escAttr(ep.desc)}','${escAttr(ep.dbkey)}')"` : `onclick="showMissingPdfMessage('${escAttr(ep.dbkey)}')"`;
     svg += `<g class="zone" ${clickFn}>
       <rect x="50" y="232" width="210" height="40" rx="6" fill="#fbbf2420" stroke="#fbbf24" stroke-width="2" stroke-dasharray="6 3"/>
       <text x="155" y="256" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700" font-family="DM Sans,sans-serif">ENTRANCE ENDCAP</text>
@@ -890,6 +915,21 @@ function closeViewer() {
   _pdfRendering = {};
   _pdfZoom = 1;
   document.body.style.overflow = '';
+}
+
+let _missingToastTimer;
+function showMissingPdfMessage(dbkey) {
+  let toast = document.getElementById('missingToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'missingToast';
+    toast.className = 'missing-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = 'PDF not available for DBKey ' + dbkey + ' — not included in this package';
+  clearTimeout(_missingToastTimer);
+  requestAnimationFrame(() => { toast.classList.add('visible'); });
+  _missingToastTimer = setTimeout(() => { toast.classList.remove('visible'); }, 3000);
 }
 
 // Init
