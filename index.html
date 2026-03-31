@@ -216,10 +216,7 @@
   .pog-card-desc {
     font-size: 13px; font-weight: 500;
     line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    word-break: break-word;
   }
   .pog-card-dbkey {
     font-size: 11px; color: var(--text2);
@@ -538,7 +535,7 @@ function showDetail(name) {
       ${thumb ? `<img class="pog-card-thumb" src="${thumb}" alt="thumbnail">` : `<div class="pog-card-thumb"></div>`}
       <div class="pog-card-info">
         <span class="pog-card-orn ${pos.orn}">${ornLabel}</span>
-        <div class="pog-card-desc">${pos.desc}</div>
+        <div class="pog-card-desc">${escAttr(pos.desc)}</div>
         <div class="pog-card-dbkey">DBKey: ${pos.dbkey}</div>
       </div>
     </div>`;
@@ -574,7 +571,7 @@ function buildUscanSVG(lane, hasL, hasR, hasE) {
 
       svg += `<g class="zone" ${clickFn}>
         <rect x="30" y="${10+yOff}" width="240" height="32" rx="6" fill="#fbbf2420" stroke="#fbbf24" stroke-width="1.5"/>
-        <text x="150" y="${30+yOff}" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600" font-family="DM Sans,sans-serif">E: ${ePos[i].desc.substring(0,35)}</text>
+        <text x="150" y="${30+yOff}" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600" font-family="DM Sans,sans-serif">E: ${escAttr(ePos[i].desc.substring(0,35))}</text>
       </g>`;
     }
   }
@@ -660,7 +657,7 @@ function buildLibertySVG(lane, hasR, hasE) {
     svg += `<g class="zone" ${clickFn}>
       <rect x="50" y="232" width="210" height="48" rx="6" fill="#fbbf2420" stroke="#fbbf24" stroke-width="2" stroke-dasharray="6 3"/>
       <text x="155" y="250" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700" font-family="DM Sans,sans-serif">ENTRANCE ENDCAP</text>
-      <text x="155" y="268" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="500" font-family="DM Sans,sans-serif">${epLabel}</text>
+      <text x="155" y="268" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="500" font-family="DM Sans,sans-serif">${escAttr(epLabel)}</text>
     </g>`;
   }
 
